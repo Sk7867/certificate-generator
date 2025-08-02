@@ -1,0 +1,92 @@
+/* Light theme variables */
+:root {
+  --header-bg-light: #f5f5f5;
+  --header-bg-dark: #2d3748;
+  --text-light: #333333;
+  --text-dark: #f8f8f8;
+  --hover-bg-light: #e5e5e5;
+  --hover-bg-dark: #4a5568;
+  --transition-speed: 300ms;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  background-color: var(--header-bg-light);
+  transition: background-color var(--transition-speed) ease;
+}
+
+.header-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 3rem;
+}
+
+.header-left,
+.header-right {
+  width: 2rem;
+  flex-shrink: 0;
+}
+
+.header-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.header-center {
+  flex-grow: 1;
+  text-align: center;
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-light);
+  margin: 0;
+  transition: color var(--transition-speed) ease;
+}
+
+.header-button {
+  padding: 0.25rem;
+  border-radius: 0.375rem;
+  color: var(--text-light);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-speed) ease;
+}
+
+.header-button:hover {
+  background-color: var(--hover-bg-light);
+}
+
+.header-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Dark mode styles */
+.dark-mode .header {
+  background-color: var(--header-bg-dark);
+}
+
+.dark-mode .header-title {
+  color: var(--text-dark);
+}
+
+.dark-mode .header-button {
+  color: var(--text-dark);
+}
+
+.dark-mode .header-button:hover {
+  background-color: var(--hover-bg-dark);
+}
