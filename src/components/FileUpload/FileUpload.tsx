@@ -1,32 +1,88 @@
 import { useRef, useState } from 'react';
-import { FiUpload, FiFile, FiX } from 'react-icons/fi';
+import { FiUpload, FiFile, FiX, FiFileText, FiFileMinus } from 'react-icons/fi';
 import './FileUpload.css';
+import * as XLSX from 'xlsx';
+import parseCsv from '../../utils/parseCsv';
 
 interface IFileUploadProps {
   label?: string;
   fileType?: string;
-  onFileSelect?: (file: File | null) => void;
+  processData?: boolean;
+  onFileSelect?: (file: File | null, data?: unknown | unknown[]) => void;
 }
 
 const FileUpload: React.FC<IFileUploadProps> = ({
   label = 'Upload Certificate Template',
-  fileType = 'application/pdf',
-  onFileSelect
+  fileType = 'PDF',
+  onFileSelect,
+  processData = false,
 }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-      onFileSelect?.(e.target.files[0]);
+      // setFile(e.target.files[0]);
+      // onFileSelect?.(e.target.files[0]);
+      await processFile(e.target.files[0]);
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      await processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const processFile = async (file: File) => {
+    try {
+      setFile(file);
+
+      if (processData) {
+        const data = await parseFileData(file);
+        onFileSelect?.(file, data);
+      } else {
+        onFileSelect?.(file);
+      }
+    } catch (error) {
+      setFile(null);
+      console.error('Error processing file:', error);
+    }
+  };
+
+  const parseFileData = async (file: File): Promise<unknown[]> => {
+    const fileType = file.name.split('.').pop()?.toLowerCase();
+
+    if (fileType === 'csv') {
+      // const text = await file.text();
+      // return parseCSV(text);
+      try {
+        const data = await parseCsv(file);
+        console.log('Parsed CSV data:', data);
+        return data as unknown[];
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error('Error parsing CSV file:', error.message);
+        } else {
+          console.error('Error parsing CSV file:', error);
+        }
+
+      }
+    } else if (fileType === 'xlsx') {
+      const arrayBuffer = await file.arrayBuffer();
+      return parseExcel(arrayBuffer);
+    }
+    throw new Error('Unsupported file format for data processing');
+  };
+
+  const parseExcel = (arrayBuffer: ArrayBuffer) => {
+    const workbook = XLSX.read(arrayBuffer);
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    return XLSX.utils.sheet_to_json(worksheet);
   };
 
   const handleDragLeave = () => {
@@ -57,6 +113,27 @@ const FileUpload: React.FC<IFileUploadProps> = ({
     }
   }
 
+  const getFileIcon = () => {
+    if (!file) return <FiUpload className="file-upload-icon" />;
+
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    switch (extension) {
+      case 'csv':
+        return <FiFileText className="file-upload-icon" />;
+      case 'xlsx':
+        return <FiFileMinus className="file-upload-icon" />;
+      default:
+        return <FiFile className="file-upload-icon" />;
+    }
+  };
+
+  const getFileHint = () => {
+    if (fileType.includes('csv')) {
+      return 'CSV or XLSX only';
+    }
+    return fileType.split(',').map(ext => ext.replace('.', '').toUpperCase()).join(' or ') + ' only';
+  };
+
   return (
     <div className="file-upload-container">
       <h3 className="file-upload-title">{label}</h3>
@@ -79,13 +156,13 @@ const FileUpload: React.FC<IFileUploadProps> = ({
 
         {!file ? (
           <div className="file-upload-empty">
-            <FiUpload className="file-upload-icon" />
+            {getFileIcon()}
             <p className="file-upload-hint">Drag & drop your file here or click to browse</p>
-            <p className="file-upload-hint">PDF only</p>
+            <p className="file-upload-hint">{getFileHint()}</p>
           </div>
         ) : (
           <div className="file-upload-preview">
-            <FiFile className="file-upload-icon" />
+            {getFileIcon()}
             <span className="file-upload-name">{file.name}</span>
             <button
               onClick={removeFile}
